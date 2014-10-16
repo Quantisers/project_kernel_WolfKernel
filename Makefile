@@ -628,26 +628,29 @@ all: vmlinux
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
-KBUILD_CFLAGS   += $(call cc-disable-warning, memset-transposed-args,)
-KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable,)
-BUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
-KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation,)
-KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow,)
-KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, misleading-indentation,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, memset-elt-size,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, parentheses,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, bool-compare,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, bool-operation,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, duplicate-decl-specifier,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, switch-unreachable,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, array-bounds,)
-KBUILD_CFLAGS  += $(call cc-disable-warning, stringop-overflow,)
-KBUILD_CFLAGS  += $(call cc-option,-fno-PIE)
-KBUILD_AFLAGS  += $(call cc-option,-fno-PIE)
 
+KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
+KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE)
+KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+# Disable unused-constant-variable warnings
+KBUILD_CFLAGS   += $(call cc-disable-warning,unused-const-variable,)
+
+# Disable format-truncation warnings
+KBUILD_CFLAGS   += $(call cc-disable-warning,format-truncation,)
+
+# Needed to unbreak GCC 7.x and above
+KBUILD_CFLAGS   += $(call cc-option,-fno-store-merging,)
+
+ifneq ($(KBUILD_LOUP_CFLAGS),)
+$(info Using custom flags!!! [${KBUILD_LOUP_CFLAGS}])
+KBUILD_CFLAGS   += $(KBUILD_LOUP_CFLAGS) 
+KBUILD_CFLAGS   += $(call cc-disable-warning,maybe-uninitialized,)
+else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS   += $(call cc-option,-Oz,-Os)
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
 KBUILD_CFLAGS	+= -O2
