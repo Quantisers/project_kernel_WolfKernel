@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/env bash
 
 export TZ="Asia/Kolkata";
@@ -49,7 +47,7 @@ export ARCH="arm64";
 export SUBARCH="arm64";
 export KBUILD_BUILD_USER="QuantumMech2000"
 export KBUILD_BUILD_HOST="TeamQuantum"
-export TOOLCHAIN="${HOME}/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/";
+export TOOLCHAIN="${HOME}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
