@@ -1,4 +1,4 @@
-/*  Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
+/*  Copyright (c) 2012-2016, 2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,6 +18,10 @@
 #include <linux/mutex.h>
 #include <linux/msm_audio_ion.h>
 
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+#include <linux/input/doubletap2wake.h>
+#endif
+
 #include <soc/qcom/socinfo.h>
 #include <linux/qdsp6v2/apr_tal.h>
 
@@ -27,18 +31,6 @@
 #include <sound/audio_cal_utils.h>
 #include "q6voice.h"
 #include <sound/adsp_err.h>
-
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-#include <linux/input/doubletap2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-#include <linux/input/sweep2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-#include <linux/input/doubletap2wake.h>
-#include <linux/input/sweep2wake.h>
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-#include <linux/input/ft5x06_720p.h>
-#endif
 
 #define TIMEOUT_MS 300
 
@@ -134,6 +126,18 @@ static int voice_send_get_sound_focus_cmd(struct voice_data *v,
 				struct sound_focus_param *soundFocusData);
 static int voice_send_get_source_tracking_cmd(struct voice_data *v,
 			struct source_tracking_param *sourceTrackingData);
+
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+static bool status_incall = false;
+static void set_incall_status(bool incall)
+{
+	status_incall = incall;
+}
+bool dt2w_incall_on(void)
+{
+	return status_incall;
+}
+#endif
 
 static void voice_itr_init(struct voice_session_itr *itr,
 			   u32 session_id)
@@ -1798,6 +1802,73 @@ static int voice_send_dtmf_rx_detection_cmd(struct voice_data *v,
 	return ret;
 }
 
+static int voc_snd_dtmf_mute_tx_detect_cmd(struct voice_data *v,
+					   uint16_t enable, uint16_t delay_us)
+{
+	int ret = 0;
+	void *apr_cvp;
+	u16 cvp_handle;
+	struct cvp_set_tx_dtmf_mute_detection_cmd cvp_tx_dtmf_mute_detection;
+
+	if (v == NULL) {
+		pr_err("%s: v is NULL\n", __func__);
+		return -EINVAL;
+	}
+	apr_cvp = common.apr_q6_cvp;
+
+	if (!apr_cvp) {
+		pr_err("%s: apr_cvp is NULL.\n", __func__);
+		return -EINVAL;
+	}
+
+	cvp_handle = voice_get_cvp_handle(v);
+
+	/* Set SET_DTMF_MUTE_TX_DETECTION */
+	cvp_tx_dtmf_mute_detection.hdr.hdr_field =
+				APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
+					      APR_HDR_LEN(APR_HDR_SIZE),
+					      APR_PKT_VER);
+	cvp_tx_dtmf_mute_detection.hdr.pkt_size =
+				APR_PKT_SIZE(APR_HDR_SIZE,
+				sizeof(cvp_tx_dtmf_mute_detection) -
+					APR_HDR_SIZE);
+	cvp_tx_dtmf_mute_detection.hdr.src_port =
+				voice_get_idx_for_session(v->session_id);
+	cvp_tx_dtmf_mute_detection.hdr.dest_port = cvp_handle;
+	cvp_tx_dtmf_mute_detection.hdr.token = 0;
+	cvp_tx_dtmf_mute_detection.hdr.opcode =
+					VSS_IVOCPROC_CMD_SET_TX_DTMF_MUTE;
+	cvp_tx_dtmf_mute_detection.cvp_dtmf_det.enable = enable;
+	cvp_tx_dtmf_mute_detection.cvp_dtmf_det.delay_us = delay_us;
+
+	v->cvp_state = CMD_STATUS_FAIL;
+	v->async_err = 0;
+
+	ret = apr_send_pkt(apr_cvp, (uint32_t *) &cvp_tx_dtmf_mute_detection);
+	if (ret < 0) {
+		pr_err("%s: Error %d sending SET_DTMF_MUTE_TX_DETECTION\n",
+		       __func__, ret);
+		return -EINVAL;
+	}
+
+	ret = wait_event_timeout(v->cvp_wait,
+				 (v->cvp_state == CMD_STATUS_SUCCESS),
+				 msecs_to_jiffies(TIMEOUT_MS));
+
+	if (!ret) {
+		pr_err("%s: wait_event timeout\n", __func__);
+		return -ETIMEDOUT;
+	}
+	if (v->async_err > 0) {
+		pr_err("%s: DSP returned error[%s]\n", __func__,
+				adsp_err_get_err_str(v->async_err));
+		ret = adsp_err_get_lnx_err_code(v->async_err);
+		return ret;
+	}
+
+	return ret;
+}
+
 static void voice_vote_powerstate_to_bms(struct voice_data *v, bool state)
 {
 
@@ -1834,6 +1905,7 @@ void voc_disable_dtmf_det_on_active_sessions(void)
 			pr_debug("disable dtmf det on ses_id=%d\n",
 				 v->session_id);
 			voice_send_dtmf_rx_detection_cmd(v, 0);
+			voc_snd_dtmf_mute_tx_detect_cmd(v, 0, 0);
 		}
 	}
 }
@@ -1854,6 +1926,31 @@ int voc_enable_dtmf_rx_detection(uint32_t session_id, uint32_t enable)
 	if (is_voc_state_active(v->voc_state))
 		ret = voice_send_dtmf_rx_detection_cmd(v,
 						       v->dtmf_rx_detect_en);
+
+	mutex_unlock(&v->lock);
+
+	return ret;
+}
+
+int voc_enable_dtmf_mute_tx_detection(uint32_t session_id, uint16_t enable,
+				      uint16_t delay_us)
+{
+	struct voice_data *v = voice_get_session(session_id);
+	int ret = 0;
+	uint16_t delay = 0;
+
+	if (v == NULL) {
+		pr_err("%s: invalid session_id 0x%x\n", __func__, session_id);
+		return -EINVAL;
+	}
+	mutex_lock(&v->lock);
+	v->dtmf_mute_tx_detect_en = enable;
+	v->dtmf_mute_tx_detect_delay = delay_us;
+	delay = v->dtmf_mute_tx_detect_delay;
+	if (is_voc_state_active(v->voc_state))
+		ret = voc_snd_dtmf_mute_tx_detect_cmd(v,
+						      v->dtmf_mute_tx_detect_en,
+						      delay);
 
 	mutex_unlock(&v->lock);
 
@@ -3893,6 +3990,9 @@ static int voice_setup_vocproc(struct voice_data *v)
 
 	if (v->dtmf_rx_detect_en)
 		voice_send_dtmf_rx_detection_cmd(v, v->dtmf_rx_detect_en);
+	if (v->dtmf_mute_tx_detect_en)
+		voc_snd_dtmf_mute_tx_detect_cmd(v, v->dtmf_mute_tx_detect_en,
+						v->dtmf_mute_tx_detect_delay);
 
 	if (v->hd_enable)
 		voice_send_hd_cmd(v, v->hd_enable);
@@ -4433,6 +4533,8 @@ static int voice_destroy_vocproc(struct voice_data *v)
 	/* send stop dtmf detecton cmd */
 	if (v->dtmf_rx_detect_en)
 		voice_send_dtmf_rx_detection_cmd(v, 0);
+	if (v->dtmf_mute_tx_detect_en)
+		voc_snd_dtmf_mute_tx_detect_cmd(v, 0, 0);
 
 	/* detach VOCPROC and wait for response from mvm */
 	mvm_d_vocproc_cmd.hdr.hdr_field = APR_HDR_FIELD(APR_MSG_TYPE_SEQ_CMD,
@@ -5823,9 +5925,6 @@ uint8_t voc_get_route_flag(uint32_t session_id, uint8_t path_dir)
 	return ret;
 }
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-bool gesture_incall = false;
-#endif
 int voc_end_voice_call(uint32_t session_id)
 {
 	struct voice_data *v = voice_get_session(session_id);
@@ -5837,15 +5936,8 @@ int voc_end_voice_call(uint32_t session_id)
 		return -EINVAL;
 	}
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0)
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1)
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 || s2w_switch == 1)
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-		gesture_incall = false;
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	set_incall_status(false);
 #endif
 
 	mutex_lock(&v->lock);
@@ -5891,17 +5983,6 @@ int voc_standby_voice_call(uint32_t session_id)
 		return -EINVAL;
 	}
 	pr_debug("%s: voc state=%d", __func__, v->voc_state);
-
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0)
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1)
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 || s2w_switch == 1)
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-		gesture_incall = true;
-#endif
 
 	if (v->voc_state == VOC_RUN) {
 		apr_mvm = common.apr_q6_mvm;
@@ -6093,15 +6174,8 @@ int voc_resume_voice_call(uint32_t session_id)
 	struct voice_data *v = voice_get_session(session_id);
 	int ret = 0;
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0)
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1)
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 || s2w_switch == 1)
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-		gesture_incall = true;
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	set_incall_status(true);
 #endif
 
 	ret = voice_send_start_voice_cmd(v);
@@ -6126,15 +6200,8 @@ int voc_start_voice_call(uint32_t session_id)
 		return -EINVAL;
 	}
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0)
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1)
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 || s2w_switch == 1)
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-		gesture_incall = true;
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	set_incall_status(true);
 #endif
 
 	mutex_lock(&v->lock);
@@ -6290,7 +6357,7 @@ void voc_config_vocoder(uint32_t media_type,
 
 static int32_t qdsp_mvm_callback(struct apr_client_data *data, void *priv)
 {
-	uint32_t *ptr = NULL;
+	uint32_t *ptr = NULL, min_payload_size = 0;
 	struct common_data *c = NULL;
 	struct voice_data *v = NULL;
 	int i = 0;
@@ -6360,7 +6427,7 @@ static int32_t qdsp_mvm_callback(struct apr_client_data *data, void *priv)
 	}
 
 	if (data->opcode == APR_BASIC_RSP_RESULT) {
-		if (data->payload_size) {
+		if (data->payload_size >= sizeof(ptr[0]) * 2) {
 			ptr = data->payload;
 
 			pr_debug("%x %x\n", ptr[0], ptr[1]);
@@ -6426,6 +6493,12 @@ static int32_t qdsp_mvm_callback(struct apr_client_data *data, void *priv)
 		}
 	} else if (data->opcode == VSS_IMEMORY_RSP_MAP) {
 		pr_debug("%s, Revd VSS_IMEMORY_RSP_MAP response\n", __func__);
+
+		if (data->payload_size < sizeof(ptr[0])) {
+			pr_err("%s: payload has invalid size[%d]\n", __func__,
+			       data->payload_size);
+			return -EINVAL;
+		}
 
 		if (data->payload_size && data->token == VOIP_MEM_MAP_TOKEN) {
 			ptr = data->payload;
@@ -6494,10 +6567,15 @@ static int32_t qdsp_mvm_callback(struct apr_client_data *data, void *priv)
 		pr_debug("%s: Received VSS_IVERSION_RSP_GET\n", __func__);
 
 		if (data->payload_size) {
+			min_payload_size = (data->payload_size >
+					    CVD_VERSION_STRING_MAX_SIZE)
+					    ? CVD_VERSION_STRING_MAX_SIZE :
+					    data->payload_size;
 			version_rsp =
 				(struct vss_iversion_rsp_get_t *)data->payload;
 			memcpy(common.cvd_version, version_rsp->version,
-			       CVD_VERSION_STRING_MAX_SIZE);
+			       min_payload_size);
+			common.cvd_version[min_payload_size - 1] = '\0';
 			pr_debug("%s: CVD Version = %s\n",
 				 __func__, common.cvd_version);
 
@@ -6670,6 +6748,11 @@ static int32_t qdsp_cvs_callback(struct apr_client_data *data, void *priv)
 
 		cvs_voc_pkt = v->shmem_info.sh_buf.buf[1].data;
 		if (cvs_voc_pkt != NULL &&  common.mvs_info.ul_cb != NULL) {
+			if (v->shmem_info.sh_buf.buf[1].size <
+			    ((3 * sizeof(uint32_t)) + cvs_voc_pkt[2])) {
+				pr_err("%s: invalid voc pkt size\n", __func__);
+				return -EINVAL;
+			}
 			/* cvs_voc_pkt[0] contains tx timestamp */
 			common.mvs_info.ul_cb((uint8_t *)&cvs_voc_pkt[3],
 					      cvs_voc_pkt[2],
@@ -6953,6 +7036,12 @@ static int32_t qdsp_cvp_callback(struct apr_client_data *data, void *priv)
 					pr_err("%s: Error received for source tracking params\n",
 						__func__);
 				}
+				v->cvp_state = CMD_STATUS_SUCCESS;
+				v->async_err = ptr[1];
+				wake_up(&v->cvp_wait);
+				break;
+			case VSS_IVOCPROC_CMD_SET_TX_DTMF_MUTE:
+				pr_debug("%s: cmd = 0x%x\n", __func__, ptr[0]);
 				v->cvp_state = CMD_STATUS_SUCCESS;
 				v->async_err = ptr[1];
 				wake_up(&v->cvp_wait);
@@ -8431,6 +8520,8 @@ static int __init voice_init(void)
 		common.voice[i].dev_tx.no_of_channels = 0;
 		common.voice[i].sidetone_gain = 0x512;
 		common.voice[i].dtmf_rx_detect_en = 0;
+		common.voice[i].dtmf_mute_tx_detect_en = 0;
+		common.voice[i].dtmf_mute_tx_detect_delay = 0;
 		common.voice[i].lch_mode = 0;
 		common.voice[i].disable_topology = false;
 
