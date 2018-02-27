@@ -767,13 +767,13 @@ static int32_t msm_flash_config(struct msm_flash_ctrl_t *flash_ctrl,
 
 	CDBG("Enter %s type %d\n", __func__, flash_data->cfg_type);
 
-	if (flash_data->cfg_type == 2 && flag_led > 0) {
-		flag_led--;
-	} else if (flash_data->cfg_type == 3) {
-		flag_led++;
-	} else if (flash_data->cfg_type == 1) {
-		flag_led = 0;
-	}
+		 if (flash_data->cfg_type == 2 && flag_led > 0) {
+			flag_led--;
+		 } else if (flash_data->cfg_type == 3) {
+			flag_led++;
+		 } else if (flash_data->cfg_type == 1) {
+			flag_led = 0;
+		 }
 
 	switch (flash_data->cfg_type) {
 	case CFG_FLASH_INIT:
