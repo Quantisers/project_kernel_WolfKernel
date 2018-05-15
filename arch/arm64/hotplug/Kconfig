@@ -15,5 +15,10 @@ config MSM_HOTPLUG
  	help
  	  The MSM hotplug driver controls on-/offlining of additional cores based on current cpu load.
  
+config THUNDERPLUG_CONTROL
+	bool "Thunderplug"
+	depends on CUSTOM_HOTPLUG
+	help
+	  This driver hotplugs cpu cores based on per-core load
 
 endmenu
