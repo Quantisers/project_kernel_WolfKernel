@@ -4215,7 +4215,10 @@ static void override_for_8917(int speed_bin)
 
 static void override_for_8937(int speed_bin)
 {
-	gpll3_clk_src.c.rate = 930000000;
+	gpll3_clk_src.c.rate = 1220000000;
+	gpll3_clk_src.vco_tbl = p_vco_8937;
+	gpll3_clk_src.num_vco = ARRAY_SIZE(p_vco_8937);
+	OVERRIDE_FMAX2(gpll3, LOW, 800000000, NOMINAL, 1066000000);
 
 	OVERRIDE_FMAX1(cci, LOWER, 37500000);
 	OVERRIDE_FMAX3(csi0,
@@ -4273,8 +4276,8 @@ static void override_for_8937(int speed_bin)
 	pclk0_clk_src.current_freq = ftbl_gcc_mdss_pclk0_clk_8937;
 	OVERRIDE_FTABLE(vcodec0, ftbl_gcc_venus0_vcodec0_clk, 8937);
 	OVERRIDE_FMAX5(vcodec0,
-		LOWER, 166150000, LOW, 240000000, NOMINAL, 360000000,
-		NOM_PLUS, 432000000, HIGH, 540000000);
+		LOWER, 166150000, LOW, 240000000, NOMINAL, 308570000,
+		NOM_PLUS, 320000000, HIGH, 400000000);
 	OVERRIDE_FMAX2(sdcc1_apps, LOWER, 100000000,
 		NOMINAL, 400000000);
 }
