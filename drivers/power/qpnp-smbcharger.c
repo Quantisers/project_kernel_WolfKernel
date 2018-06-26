@@ -466,13 +466,13 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_hvdcp_icl_ma = 2000;
+static int smbchg_default_hvdcp_icl_ma = 1600; //Maximum charging current at HVDCP (9VDC HW Support Power Supply)
 module_param_named(
 	default_hvdcp_icl_ma, smbchg_default_hvdcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_hvdcp3_icl_ma = 3000;
+static int smbchg_default_hvdcp3_icl_ma = 2500; //Special curent for High Power Buck Mode at 6VDC Supply 
 module_param_named(
 	default_hvdcp3_icl_ma, smbchg_default_hvdcp3_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -1828,7 +1828,7 @@ static int smbchg_set_usb_current_max(struct smbchg_chip *chip,
 				pr_err("Couldn't set CMD_IL rc = %d\n", rc);
 				goto out;
 			}
-			chip->usb_max_current_ma = 500;
+			chip->usb_max_current_ma = 800;
 		}
 #ifdef CONFIG_FORCE_FAST_CHARGE
 		if ((force_fast_charge > 0 && current_ma == CURRENT_500_MA) || current_ma == CURRENT_900_MA) {
@@ -1957,7 +1957,7 @@ static int smbchg_set_fastchg_current_raw(struct smbchg_chip *chip,
 			dev_err(chip->dev, "Couldn't set %dmA rc=%d\n",
 					CURRENT_500_MA, rc);
 		else
-			chip->fastchg_current_ma = 500;
+			chip->fastchg_current_ma = 800;
 		return rc;
 	}
 
@@ -2979,7 +2979,7 @@ out:
 	return rc;
 }
 
-static int smbchg_ibat_ocp_threshold_ua = 4500000;
+static int smbchg_ibat_ocp_threshold_ua = 2800000;
 module_param(smbchg_ibat_ocp_threshold_ua, int, 0644);
 
 #define UCONV			1000000LL
@@ -4538,7 +4538,7 @@ static int smbchg_set_optimal_charging_mode(struct smbchg_chip *chip, int type)
 }
 
 #define DEFAULT_SDP_MA		100
-#define DEFAULT_CDP_MA		1500
+#define DEFAULT_CDP_MA		2200
 static int smbchg_change_usb_supply_type(struct smbchg_chip *chip,
 						enum power_supply_type type)
 {
@@ -7489,7 +7489,8 @@ err:
 }
 
 #define DEFAULT_VLED_MAX_UV		3500000
-#define DEFAULT_FCC_MA			2000
+#define DEFAULT_FCC_MA			2500
+#define INDIA_DEFAULT_FCC_MA		2000
 static int smb_parse_dt(struct smbchg_chip *chip)
 {
 	int rc = 0, ocp_thresh = -EINVAL;
