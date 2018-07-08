@@ -486,6 +486,7 @@ static int alarmtimer_suspend(struct device *dev)
 	return ret;
 }
 #endif
+
 static int alarmtimer_resume(struct device *dev)
 {
 	struct rtc_device *rtc;
