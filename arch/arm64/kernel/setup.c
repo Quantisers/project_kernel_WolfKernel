@@ -63,6 +63,7 @@
 #include <asm/memblock.h>
 #include <asm/psci.h>
 #include <asm/efi.h>
+#include <asm/bootinfo.h>
 
 unsigned int processor_id;
 EXPORT_SYMBOL(processor_id);
@@ -384,6 +385,14 @@ static void __init request_standard_resources(void)
 			request_resource(res, &kernel_data);
 	}
 }
+
+#ifdef CONFIG_OF_FLATTREE
+void __init early_init_dt_setup_pureason_arch(unsigned long pu_reason)
+{
+	set_powerup_reason(pu_reason);
+	pr_info("Powerup reason=0x%x\n", get_powerup_reason());
+}
+#endif
 
 #ifdef CONFIG_BLK_DEV_INITRD
 /*
