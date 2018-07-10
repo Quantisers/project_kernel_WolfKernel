@@ -440,7 +440,7 @@ module_param_named(
 	debug_mask, smbchg_debug_mask, int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_parallel_en = 0;
+static int smbchg_parallel_en = 1;
 module_param_named(
 	parallel_en, smbchg_parallel_en, int, S_IRUSR | S_IWUSR
 );
@@ -457,13 +457,13 @@ module_param_named(
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_hvdcp_icl_ma = 1200;
+static int smbchg_default_hvdcp_icl_ma = 2000;
 module_param_named(
 	default_hvdcp_icl_ma, smbchg_default_hvdcp_icl_ma,
 	int, S_IRUSR | S_IWUSR
 );
 
-static int smbchg_default_hvdcp3_icl_ma = 2000;
+static int smbchg_default_hvdcp3_icl_ma = 3000;
 module_param_named(
 	default_hvdcp3_icl_ma, smbchg_default_hvdcp3_icl_ma,
 	int, S_IRUSR | S_IWUSR
@@ -3748,28 +3748,6 @@ static void check_battery_type(struct smbchg_chip *chip)
 	}
 }
 
-
-static int version_flag;
-void get_version_change_current(struct smbchg_chip *chip)
-{
-	char *boardid_string = NULL;
-	char boardid_start[32] = " ";
-	int India;
-
-	boardid_string = strstr(saved_command_line, "board_id=");
-
-	if (boardid_string != NULL) {
-		strncpy(boardid_start, boardid_string+9, 9);
-		India = strncmp(boardid_start, "S88536CA2", 9);
-		if (!India) {
-			pr_err("India version!\n");
-			version_flag = 1;
-		} else {
-			pr_err("Normal version!\n");
-			version_flag = 0;
-		}
-	}
-}
 static void smbchg_external_power_changed(struct power_supply *psy)
 {
 	struct smbchg_chip *chip = container_of(psy,
@@ -4545,13 +4523,6 @@ static int smbchg_change_usb_supply_type(struct smbchg_chip *chip,
 
 	if (type != POWER_SUPPLY_TYPE_UNKNOWN)
 		chip->usb_supply_type = type;
-
-
-
-	if (version_flag) {
-		smbchg_default_hvdcp3_icl_ma = 1500;
-		smbchg_default_dcp_icl_ma = 1500;
-	}
 
 	if (chip->typec_psy && (type != POWER_SUPPLY_TYPE_USB))
 		current_limit_ma = chip->typec_current_ma;
@@ -7493,7 +7464,6 @@ err:
 
 #define DEFAULT_VLED_MAX_UV		3500000
 #define DEFAULT_FCC_MA			2000
-#define INDIA_DEFAULT_FCC_MA	1500
 static int smb_parse_dt(struct smbchg_chip *chip)
 {
 	int rc = 0, ocp_thresh = -EINVAL;
@@ -7515,12 +7485,7 @@ static int smb_parse_dt(struct smbchg_chip *chip)
 			"fastchg-current-ma", rc, 1);
 
 	if (chip->cfg_fastchg_current_ma == -EINVAL) {
-		pr_err("version_flag\n");
-		if (version_flag)
-			chip->cfg_fastchg_current_ma = INDIA_DEFAULT_FCC_MA;
-		else
-			chip->cfg_fastchg_current_ma = DEFAULT_FCC_MA;
-
+		chip->cfg_fastchg_current_ma = DEFAULT_FCC_MA;
 		pr_err("chip->cfg_fastchg_current_ma = %d\n", chip->cfg_fastchg_current_ma);
 	}
 
@@ -8420,8 +8385,6 @@ static int smbchg_probe(struct spmi_device *spmi)
 	mutex_init(&chip->wipower_config);
 	mutex_init(&chip->usb_status_lock);
 	device_init_wakeup(chip->dev, true);
-
-	get_version_change_current(chip);
 
 	rc = smbchg_parse_peripherals(chip);
 	if (rc) {
