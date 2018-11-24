@@ -1164,4 +1164,8 @@ source "drivers/input/touchscreen/GT917D/Kconfig"
 config TOUCHSCREEN_LOCKDOWN_INFO
 	bool "lockdown info"
 	default n
+
+config TOUCHSCREEN_DOUBLETAP2WAKE
+	bool "DoubleTap2Wake for touchscreens"
+	default n
 endif
