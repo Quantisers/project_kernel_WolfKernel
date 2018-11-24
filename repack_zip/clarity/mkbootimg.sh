@@ -31,5 +31,5 @@ else
 	osvel=2018-11;
 fi;
 
-/tmp/clarity/mkbootimg --kernel /tmp/clarity/zImage --ramdisk /tmp/clarity/boot.img-ramdisk.gz --cmdline "$cmdline" --board "$board" --base $base --pagesize $pagesize --kernel_offset $kerneloff --ramdisk_offset $ramdiskoff --second_offset $secondoff --tags_offset "$tagsoff" --os_version "$osver" --os_patch_level "$osvel" --hash "$hashfck" --output /tmp/clarity/newboot.img;
+/tmp/clarity/mkbootimg --kernel /tmp/clarity/zImage --ramdisk /tmp/clarity/patched-ramdisk.gz --cmdline "$cmdline" --board "$board" --base $base --pagesize $pagesize --kernel_offset $kerneloff --ramdisk_offset $ramdiskoff --second_offset $secondoff --tags_offset "$tagsoff" --os_version "$osver" --os_patch_level "$osvel" --hash "$hashfck" --output /tmp/clarity/newboot.img;
 
