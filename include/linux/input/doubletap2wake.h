@@ -22,6 +22,11 @@
 #define _LINUX_DOUBLETAP2WAKE_H
 
 extern int dt2w_switch;
+<<<<<<< HEAD
 extern bool gesture_incall;
+=======
+
+extern bool dt2w_scr_suspended;
+>>>>>>> 7e4b685d857f... input: add double tap 2 Wake (dt2w) support
 
 #endif	/* _LINUX_DOUBLETAP2WAKE_H */
