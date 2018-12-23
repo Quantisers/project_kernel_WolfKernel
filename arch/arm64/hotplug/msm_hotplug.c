@@ -19,8 +19,8 @@
 #include <linux/device.h>
 #include <linux/slab.h>
 #include <linux/cpufreq.h>
-#ifdef CONFIG_STATE_NOTIFIER
-#include <linux/state_notifier.h>
+#ifdef CONFIG_POWERSUSPEND
+#include <linux/powersuspend.h>
 #endif
 #include <linux/mutex.h>
 #include <linux/input.h>
@@ -335,8 +335,7 @@ static void cpu_down_work(struct work_struct *work)
 			continue;
 		lowest_cpu = get_lowest_load_cpu();
 		if (lowest_cpu > 0 && lowest_cpu <= stats.total_cpus) {
-			if (check_lock(lowest_cpu) ||
-			    check_cpuboost(lowest_cpu))
+			if (check_lock(lowest_cpu))
 				break;
 			cpu_down(lowest_cpu);
 		}
@@ -473,7 +472,7 @@ reschedule:
 	reschedule_hotplug_work();
 }
 
-#ifdef CONFIG_STATE_NOTIFIER
+#ifdef CONFIG_POWERSUSPEND
 static void msm_hotplug_suspend(void)
 {
 	int cpu;
@@ -520,11 +519,7 @@ static void msm_hotplug_resume(void)
 		}
 	}
 
-#ifdef CONFIG_CPU_BOOST
-	if (wakeup_boost || required_wakeup) {
-#else
 	if (required_wakeup) {
-#endif
 		/* Fire up all CPUs */
 		for_each_possible_cpu(cpu) {
 			if (cpu == 0)
@@ -538,25 +533,27 @@ static void msm_hotplug_resume(void)
 		reschedule_hotplug_work();
 }
 
-static int state_notifier_callback(struct notifier_block *this,
-				unsigned long event, void *data)
+static void __ref msm_hp_suspend(struct power_suspend *handler)
 {
 	if (!hotplug.msm_enabled)
-		return NOTIFY_OK;
+		return;
 
-	switch (event) {
-		case STATE_NOTIFIER_ACTIVE:
-			msm_hotplug_resume();
-			break;
-		case STATE_NOTIFIER_SUSPEND:
-			msm_hotplug_suspend();
-			break;
-		default:
-			break;
-	}
+	msm_hotplug_suspend();
 
-	return NOTIFY_OK;
 }
+
+static void __ref msm_hp_resume(struct power_suspend *handler)
+{
+	if (!hotplug.msm_enabled)
+		return;
+	
+	msm_hotplug_resume();
+}
+
+static struct power_suspend msm_hotplug_power_suspend_driver = {
+	.suspend = msm_hp_suspend,
+	.resume = msm_hp_resume,
+};
 #endif
 
 static void hotplug_input_event(struct input_handle *handle, unsigned int type,
@@ -664,13 +661,8 @@ static int msm_hotplug_start(void)
 		goto err_out;
 	}
 
-#ifdef CONFIG_STATE_NOTIFIER
-	hotplug.notif.notifier_call = state_notifier_callback;
-	if (state_register_client(&hotplug.notif)) {
-		pr_err("%s: Failed to register State notifier callback\n",
-			MSM_HOTPLUG);
-		goto err_dev;
-	}
+#ifdef CONFIG_POWERSUSPEND
+	register_power_suspend(&msm_hotplug_power_suspend_driver);
 #endif
 
 	ret = input_register_handler(&hotplug_input_handler);
@@ -733,8 +725,8 @@ static void __ref msm_hotplug_stop(void)
 	mutex_destroy(&stats.stats_mutex);
 	kfree(stats.load_hist);
 
-#ifdef CONFIG_STATE_NOTIFIER
-	state_unregister_client(&hotplug.notif);
+#ifdef CONFIG_POWERSUSPEND
+	unregister_power_suspend(&msm_hotplug_power_suspend_driver);
 #endif
 	hotplug.notif.notifier_call = NULL;
 	input_unregister_handler(&hotplug_input_handler);
@@ -1124,25 +1116,25 @@ static ssize_t show_current_load(struct device *dev,
 	return sprintf(buf, "%u\n", stats.cur_avg_load);
 }
 
-static DEVICE_ATTR(msm_enabled, 644, show_enable_hotplug, store_enable_hotplug);
-static DEVICE_ATTR(lock_duration, 644, show_lock_duration,
+static DEVICE_ATTR(msm_enabled, 0644, show_enable_hotplug, store_enable_hotplug);
+static DEVICE_ATTR(lock_duration, 0644, show_lock_duration,
 		   store_lock_duration);
-static DEVICE_ATTR(boost_lock_duration, 644, show_boost_lock_duration,
+static DEVICE_ATTR(boost_lock_duration, 0644, show_boost_lock_duration,
 		   store_boost_lock_duration);
-static DEVICE_ATTR(update_rates, 644, show_update_rates, store_update_rates);
-static DEVICE_ATTR(load_levels, 644, show_load_levels, store_load_levels);
-static DEVICE_ATTR(min_cpus_online, 644, show_min_cpus_online,
+static DEVICE_ATTR(update_rates, 0644, show_update_rates, store_update_rates);
+static DEVICE_ATTR(load_levels, 0644, show_load_levels, store_load_levels);
+static DEVICE_ATTR(min_cpus_online, 0644, show_min_cpus_online,
 		   store_min_cpus_online);
-static DEVICE_ATTR(max_cpus_online, 644, show_max_cpus_online,
+static DEVICE_ATTR(max_cpus_online, 0644, show_max_cpus_online,
 		   store_max_cpus_online);
-static DEVICE_ATTR(max_cpus_online_susp, 644, show_max_cpus_online_susp,
+static DEVICE_ATTR(max_cpus_online_susp, 0644, show_max_cpus_online_susp,
 		   store_max_cpus_online_susp);
-static DEVICE_ATTR(cpus_boosted, 644, show_cpus_boosted, store_cpus_boosted);
-static DEVICE_ATTR(offline_load, 644, show_offline_load, store_offline_load);
-static DEVICE_ATTR(fast_lane_load, 644, show_fast_lane_load,
+static DEVICE_ATTR(cpus_boosted, 0644, show_cpus_boosted, store_cpus_boosted);
+static DEVICE_ATTR(offline_load, 0644, show_offline_load, store_offline_load);
+static DEVICE_ATTR(fast_lane_load, 0644, show_fast_lane_load,
 		   store_fast_lane_load);
-static DEVICE_ATTR(io_is_busy, 644, show_io_is_busy, store_io_is_busy);
-static DEVICE_ATTR(current_load, 444, show_current_load, NULL);
+static DEVICE_ATTR(io_is_busy, 0644, show_io_is_busy, store_io_is_busy);
+static DEVICE_ATTR(current_load, 0444, show_current_load, NULL);
 
 static struct attribute *msm_hotplug_attrs[] = {
 	&dev_attr_msm_enabled.attr,
