@@ -1073,6 +1073,11 @@ CONFIG_IPC_ROUTER_SECURITY=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
+# Custom Hotplug drivers
+#
+CONFIG_CUSTOM_HOTPLUG=y
+CONFIG_MSM_HOTPLUG=y
+#
 # Device Drivers
 #
 
