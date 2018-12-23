@@ -315,7 +315,7 @@ enum {
 /* int menu */
 #define CAM_EXT_CID_CONTROL_AE_PRECATURE_TRIGGER (CID_CAM_EXT_CLASS_BASE + 37)
 enum {
-	CAM_EXT_CONTROL_AE_PRECATURE_TRIGGER_IDLE,
+	CAM_EXT_CONTROL_AE_PRECATURE_TRIGGER_IDEL,
 	CAM_EXT_CONTROL_AE_PRECATURE_TRIGGER_START,
 	CAM_EXT_CONTROL_AE_PRECATURE_TRIGGER_CANCEL,
 
@@ -397,10 +397,10 @@ enum {
 	CAM_EXT_EDGE_MODE_MAX = CAM_EXT_EDGE_MODE_ZERO_SHUTTER_LAG,
 };
 
-/* float menu, need to read list of float from mod */
+/* int menu, need to read list of int from mod */
 #define CAM_EXT_CID_LENS_APERTURES (CID_CAM_EXT_CLASS_BASE + 51)
 
-/* float menu, need to read list of float from mod */
+/* int menu, need to read list of int from mod */
 #define CAM_EXT_CID_LENS_FILTER_DENSITY (CID_CAM_EXT_CLASS_BASE + 52)
 
 /* int menu */
