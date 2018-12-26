@@ -63,8 +63,6 @@ obj-$(CONFIG_LEDS_AW2013)		+= leds-aw2013.o
 obj-$(CONFIG_VIB_GPIO)		+= gpio_vib.o
 # LED SPI Drivers
 obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
-#add for flashlight qihaiqian.wt ++
-obj-y		+=leds-msm-gpio-flash.o
-#add end
+
 # LED Triggers
 obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
