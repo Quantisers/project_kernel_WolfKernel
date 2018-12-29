@@ -1,5 +1,4 @@
 /* Copyright (c) 2009-2017, The Linux Foundation. All rights reserved.
- * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -625,6 +624,7 @@ static int32_t msm_flash_low(
 	CDBG("Exit\n");
 	return 0;
 }
+
 
 static int32_t msm_gpio_flash_low(
 		struct msm_flash_ctrl_t *flash_ctrl,
