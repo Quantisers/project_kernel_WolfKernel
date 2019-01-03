@@ -204,24 +204,6 @@ config CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
-config CPU_FREQ_DEFAULT_GOV_IMPULSE
-	bool "impulse"
-	select CPU_FREQ_GOV_IMPULSE
-	help
-	  Use the CPUFreq governor 'impulse' as default. This allows
-	  you to get a full dynamic cpu frequency capable system by simply
-	  loading your cpufreq low-level hardware driver, using the
-	  'impulse' governor for latency-sensitive workloads.
- 	
-config CPU_FREQ_DEFAULT_GOV_ELECTRON
-	bool "electron"
-	select CPU_FREQ_GOV_ELECTRON
-	help
-	  Use the CPUFreq governor 'electron' as default. This allows
-	  you to get a full dynamic cpu frequency capable system by simply
-	  loading your cpufreq low-level hardware driver, using the
-	  'electron' governor for latency-sensitive workloads.
-
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -455,31 +437,6 @@ config CPU_FREQ_GOV_INTELLIACTIVE
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
-	  
-config CPU_FREQ_GOV_ZZMOOVE
- 	tristate "'zzmoove' cpufreq governor"
- 	depends on CPU_FREQ
- 	help
- 	  'zzmoove' - based on cpufreq_conservative, using predefined
- 	  frequency lookup tables and optimized scaling triggers instead of
- 	  % frequency steps to get smooth up/downscaling dependant on CPU load.
- 	  If in doubt, say N.
- 	  
-config CPU_FREQ_GOV_IMPULSE
-	tristate "'interactive' cpufreq policy governor"
-	depends on CPU_FREQ
-	help
-	  'impulse' - This driver adds a dynamic cpufreq policy governor
-	  designed for latency-sensitive workloads.
-	  If in doubt, say N.
-
-config CPU_FREQ_GOV_ELECTRON
-	tristate "'electron' cpufreq governor"
-	depends on CPU_FREQ
-	help
-	  'electron' - another tuned interactive with extra options
-	  
-comment "CPU frequency scaling drivers"
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
