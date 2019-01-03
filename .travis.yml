@@ -31,6 +31,7 @@ after_success: |
   git clone  https://github.com/quantummech2000/android_kernel_santoni --branch=rel/wolf4.4 WolfKernel --depth=1
   wget http://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
   tar -xvf  gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
+  clear
   cd $KERNELDIR
   bash travis.sh
   cd $HOME
