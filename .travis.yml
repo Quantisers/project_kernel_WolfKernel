@@ -15,4 +15,5 @@ script:
   - export KERNELDIR=$HOME/WolfKernel 
   - git clone  https://github.com/quantummech2000/android_kernel_santoni --branch=rel/wolf4.4 WolfKernel 
   - cd $KERNELDIR
+  - curl https://raw.githubusercontent.com/Quantummech2000/android_kernel_santoni/rel/wolf4.5/travis.sh?token=AlqDamssZ3sI-OkrDMtOUivdFKXNhqOuks5cNvDswA%3D%3D travis.sh
   - bash travis.sh
