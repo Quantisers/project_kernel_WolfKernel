@@ -20,7 +20,6 @@ packages:
       - ncurses-dev
       
 after_success: |
-  echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc &&source ~/.bashrc && echo $PATH
   git config --global user.name "Quantummech2000"
   git config --global user.email "vvr-rockstar@bmsit.in"
   cd $HOME
@@ -35,3 +34,5 @@ after_success: |
   cd $KERNELDIR
   bash travis.sh
   cd $HOME
+  echo 'export PATH="/usr/lib/ccache:$PATH"' | tee -a ~/.bashrc &&source ~/.bashrc && echo $PATH
+ 
