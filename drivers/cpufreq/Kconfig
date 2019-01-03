@@ -179,11 +179,21 @@ config CPU_FREQ_DEFAULT_GOV_SCHED
 	  Use the CPUfreq governor 'sched' as default. This scales
 	  cpu frequency using CPU utilization estimates from the
 	  scheduler.
+
 config CPU_FREQ_DEFAULT_GOV_CULTIVATION
  	bool "cultivation"
  	select CPU_FREQ_GOV_CULTIVATION
  	help
  	Use the CPUFreq governor 'cultivation' as default.
+ 
+config CPU_FREQ_DEFAULT_GOV_YANKACTIVE
+ 	bool "yankactive"
+ 	select CPU_FREQ_GOV_YANKACTIVE
+ 	help
+ 	  Use the CPUFreq governor 'yankactive' as default. This allows
+ 	  you to get a full dynamic cpu frequency capable system by simply
+ 	  loading your cpufreq low-level hardware driver, using the
+ 	  'yankactive' governor for latency-sensitive workloads.
  
 
 endchoice
@@ -251,6 +261,16 @@ config CPU_FREQ_GOV_ZZMOOVE
  	  frequency lookup tables and optimized scaling triggers instead of
  	  % frequency steps to get smooth up/downscaling dependant on CPU load.
  	  If in doubt, say N.
+
+config CPU_FREQ_GOV_YANKACTIVE
+ 	tristate "'yankactive' cpufreq policy governor"
+ 	help
+ 	  'yankactive' - This driver adds a dynamic cpufreq policy governor
+ 	  designed for latency-sensitive workloads.
+ 	  The governor is based on interactive with just different default settings
+ 	  and can be achieved using interactive with a script. This is added for
+ 	  simplification purposes for myself.
+ 
 
 config CPU_FREQ_GOV_NEBULA
  	tristate "'nebula' cpufreq policy governor"
