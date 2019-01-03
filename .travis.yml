@@ -1,36 +1,18 @@
-language: bash
 
-sudo: required
+language: bas
 
-addons:
-  apt:
-packages:
-      - ccache
-      - bc
-      - libncurses5-dev
-      - git-core
-      - gnupg
-      - flex
-      - bison
-      - gperf
-      - build-essential
-      - zip
-      - curl
-      - libc6-dev 
-      - ncurses-dev
-      
-after_success: |
-  git config --global user.name "Quantummech2000"
-  git config --global user.email "vvr-rockstar@bmsit.in"
-  cd $HOME
-  export BOT_API_KEY="654618361:AAGnAXQMin_N3pwlyu2Jc9YXQspCIacaB_s"
-  export ARCH=arm64
-  export CHAT_ID="@Wuffzaa"
-  export KERNELNAME=Wolf
-  export KERNELDIR=$HOME/WolfKernel 
-  git clone  https://github.com/quantummech2000/android_kernel_santoni --branch=rel/wolf4.4 WolfKernel --depth=1
-  wget http://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
-  tar -xvf  gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
-  cd WolfKernel
-  bash travis.sh
-  cd $HOME
+before_script:
+  - sudo apt-get update -y
+  - wget http://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
+  - tar -xvf  gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu.tar.xz
+  - sudo apt-get install -y ccache bc libncurses5-dev git-core gnupg flex bison gperf build-essential zip curl libc6-dev ncurses-dev
+script:
+  - cd $HOME
+  - export BOT_API_KEY="654618361:AAGnAXQMin_N3pwlyu2Jc9YXQspCIacaB_s"
+  - export ARCH=arm64
+  - export CHAT_ID="@Wuffzaa"
+  - export KERNELNAME=Wolf
+  - export KERNELDIR=$HOME/WolfKernel 
+  - git clone  https://github.com/quantummech2000/android_kernel_santoni --branch=rel/wolf4.4 WolfKernel 
+  - cd $KERNELDIR
+  - bash travis.sh
