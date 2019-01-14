@@ -4404,7 +4404,7 @@ static int msm_gcc_probe(struct platform_device *pdev)
 								600000000;
 			} else {
 				gfx3d_clk_src.freq_tbl =
-					ftbl_gcc_oxili_gfx3d_clk_8937_475MHz;
+					ftbl_gcc_oxili_gfx3d_clk_8940_500MHz;
 				gfx3d_clk_src.c.fmax[VDD_DIG_SUPER_TUR] =
 
 								600000000;
