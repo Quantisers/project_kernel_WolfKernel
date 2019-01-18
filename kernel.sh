@@ -51,8 +51,8 @@ export TOOLCHAIN="${HOME}/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files/";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
-export CC="${HOME}/dragontc-8.0/bin/clang"
-export CLANG_TRIPLE=aarch64-linux-gnu- \
+export CC="${HOME}/clang/bin/clang"
+export CLANG_TRIPLE="aarch64-linux-gnu-"
 export MAKE_TYPE="Treble"
 
 if [[ -z "${JOBS}" ]]; then
