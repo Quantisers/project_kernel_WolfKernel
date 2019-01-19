@@ -23,7 +23,7 @@ function transfer() {
 	url="$(curl -# -T $1 https://transfer.sh)";
 	printf '\n';
 	echo -e "Download ${zipname} at ${url}";
-    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$url" -d chat_id="-1001263315920"
+#    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$url" -d chat_id="-1001263315920"
 }
 
 if [[ -z ${KERNELDIR} ]]; then
