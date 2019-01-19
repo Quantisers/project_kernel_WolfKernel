@@ -23,7 +23,7 @@ function transfer() {
 	url="$(curl -# -T $1 https://transfer.sh)";
 	printf '\n';
 	echo -e "Download ${zipname} at ${url}";
-    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$url" -d chat_id=$CHAT_ID
+    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$url" -d chat_id="-1001263315920"
 }
 
 if [[ -z ${KERNELDIR} ]]; then
@@ -33,7 +33,7 @@ fi
 
 export DEVICE=$1;
 if [[ -z ${DEVICE} ]]; then
-    export DEVICE="Santoni";
+    export DEVICE="HM4X";
 fi
 
 mkdir -p ${KERNELDIR}/aroma
@@ -51,8 +51,13 @@ export TOOLCHAIN="${HOME}/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
-export CC="${HOME}/clang/bin/clang"
-export CLANG_TRIPLE="aarch64-linux-gnu-"
+
+export CC=$HOME/clang/bin/clang
+export CLANG_VERSION=$($CC --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+export CLANG_TRIPLE=aarch64-linux-gnu-
+export CLANG_LD_PATH=$HOME/clang/lib
+export LLVM_DIS=$HOME/clang/bin/llvm-dis
+
 export MAKE_TYPE="Treble"
 
 if [[ -z "${JOBS}" ]]; then
@@ -67,7 +72,7 @@ export TCVERSION1="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F '(' '{print $2}' | awk '{print tolower($1)}')"
 export TCVERSION2="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F ')' '{print $2}' | awk '{print tolower($1)}')"
-export ZIPNAME="${KERNELNAME}-${DEVICE}-TREBLE-BUILD-$(date +%Y%m%d-%H%M).zip"
+export ZIPNAME="${KERNELNAME}-${DEVICE}-TREBLE-65Hz-$(date +%Y%m%d-%H%M).zip"
 export FINAL_ZIP="${ZIP_DIR}/${ZIPNAME}"
 
 [ ! -d "${ZIP_DIR}" ] && mkdir -pv ${ZIP_DIR}
@@ -97,7 +102,8 @@ if [[ "$@" =~ "clean" ]]; then
 fi
 
 # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADFgADx8M3D8ZwwIWZRWcwAg"  -d chat_id=$CHAT_ID
-curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="Beta Build Scheduled for $KERNELNAME Kernel (Treble) " -d chat_id=$CHAT_ID
+curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="#Awoo 
+Build Scheduled for $KERNELNAME Kernel (Treble-65Hz)" -d chat_id=$CHAT_ID
 ${MAKE} $DEFCONFIG;
 START=$(date +"%s");
 echo -e "Using ${JOBS} threads to compile"
@@ -110,8 +116,8 @@ echo -e "Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds.";
 
 if [[ ! -f "${IMAGE}" ]]; then
     echo -e "Build failed :P";
-    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="CI build for $KERNELNAME Kernel stopped due to an error" -d chat_id=$CHAT_ID
-    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADHwADx8M3DyJi1SWaX6BdAg"  -d chat_id=$CHAT_ID
+    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$KERNELNAME Kernel stopped due to an error, @vvreddy @infinitEplus Please take a Look" -d chat_id="-1001406849717"
+    # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADHwADx8M3DyJi1SWaX6BdAg"  -d chat_id="-1001263315920"
     success=false;
     exit 1;
 else
@@ -137,20 +143,21 @@ if [[ ${success} == true ]]; then
     echo -e "UPLOAD SUCCESSFUL";
     echo -e "Please push the build to AFH Manually";
 
-message="CI build of Wolf Kernel completed with the latest commit."
+message="Wolf Kernel - Treble Version."
+compatible="AOSP PIE/OREO - Treble ONLY"
 time="Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 
-curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$(git log --pretty=format:'%h : %s' -5)" -d chat_id=$CHAT_ID
-curl -F chat_id="-1001406849717" -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
+# curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$(git log --pretty=format:'%h : %s' -5)" -d chat_id=$CHAT_ID
+curl -F chat_id="-1001263315920" -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $compatible $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
 
 curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
 ♔♔♔♔♔♔♔BUILD-DETAILS♔♔♔♔♔♔♔
 🖋️ Author     : vvrRockStar
 🛠️ Make-Type  : $MAKE_TYPE
-🗒️ Buld-Type  : New Year Special
+🗒️ Buld-Type  : 65Hz
 ⌚ Build-Time : $time
 🗒️ Zip-Name   : $ZIPNAME
-"  -d chat_id=$CHAT_ID
+"  -d chat_id="-1001406849717"
 # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADFQADIIRIEhVlVOIt6EkuAgc"  -d chat_id=$CHAT_ID
 # curl -F document=@$url caption="Latest Build." https://api.telegram.org/bot$BOT_API_KEY/sendDocument -d chat_id=$CHAT_ID
 
