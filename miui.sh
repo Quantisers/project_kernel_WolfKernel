@@ -51,8 +51,12 @@ export TOOLCHAIN="${HOME}/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files/";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
-export CC="${HOME}/dragontc-8.0/bin/clang"
-export CLANG_TRIPLE=aarch64-linux-gnu- \
+export CC=$HOME/clang/bin/clang
+export CLANG_VERSION=$($CC --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+export CLANG_TRIPLE=aarch64-linux-gnu-
+export CLANG_LD_PATH=$HOME/clang/lib
+export LLVM_DIS=$HOME/clang/bin/llvm-dis
+
 export MAKE_TYPE="MIUI"
 export MODULES_DIR="${KERNELDIR}/modules";
 export MODULES="modules";
@@ -61,7 +65,7 @@ if [[ -z "${JOBS}" ]]; then
 #    export JOBS=64;
 fi
 
-export MAKE="make O=${OUTDIR}";
+export MAKE="make O=${OUTDIR} $CC $CLANG_TRIPLE" ;
 check_toolchain;
 
 export TCVERSION1="$(${CROSS_COMPILE}gcc --version | head -1 |\
