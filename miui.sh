@@ -167,15 +167,21 @@ message="MIUI BUILD -- Screen Refresh Rate at 65Hz"
 time="Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 
 
-curl -F chat_id=$CHAT_ID -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
-
-curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
+curl -F chat_id=$CHAT_ID -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="
 	BUILD-DETAILS
 🛠️ Make-Type  : $MAKE_TYPE
-🗒️ Buld-Type  : MIUI-Staging
+🗒️ Build-Type  : MIUI-Staging
 ⌚ Build-Time : $time
 🗒️ Zip-Link   : [${ZIPNAME}](${url})
-"  -d chat_id=$CHAT_ID
+"  https://api.telegram.org/bot$BOT_API_KEY/sendDocument
+
+# curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
+# 	BUILD-DETAILS
+# 🛠️ Make-Type  : $MAKE_TYPE
+# 🗒️ Buld-Type  : MIUI-Staging
+# ⌚ Build-Time : $time
+# 🗒️ Zip-Link   : [${ZIPNAME}](${url})
+# "  -d chat_id=$CHAT_ID
 curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
 	Recent Commits:
 	$(git log --pretty=format:'%h : %s' -5)
