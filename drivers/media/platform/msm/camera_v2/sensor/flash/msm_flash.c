@@ -25,7 +25,6 @@
 
 DEFINE_MSM_MUTEX(msm_flash_mutex);
 
-struct msm_flash_ctrl_t *flash_ctrl_wt = NULL;
 
 static struct v4l2_file_operations msm_flash_v4l2_subdev_fops;
 static struct led_trigger *torch_trigger;
