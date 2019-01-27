@@ -161,13 +161,13 @@ then
 echo -e "$ZIPNAME zip can be found at $FINAL_ZIP";
 if [[ ${success} == true ]]; then
     echo -e "Uploading ${ZIPNAME} to https://transfer.sh/";
-    
+    transfer "${FINAL_ZIP}";
 
 message="MIUI BUILD -- Screen Refresh Rate at 65Hz"
 time="Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 
 
-curl -F chat_id="-1001406849717" -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
+curl -F chat_id=$CHAT_ID -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
 
 curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
 	BUILD-DETAILS
