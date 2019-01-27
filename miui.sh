@@ -23,7 +23,7 @@ function transfer() {
 	url="$(curl -# -T $1 https://transfer.sh)";
 	printf '\n';
 	echo -e "Download ${zipname} at ${url}";
-    curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$url" -d chat_id=$CHAT_ID
+    # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="Build link: $url" -d chat_id=$CHAT_ID
 }
 
 if [[ -z ${KERNELDIR} ]]; then
@@ -161,22 +161,25 @@ then
 echo -e "$ZIPNAME zip can be found at $FINAL_ZIP";
 if [[ ${success} == true ]]; then
     echo -e "Uploading ${ZIPNAME} to https://transfer.sh/";
-    transfer "${FINAL_ZIP}";
+    
 
 message="MIUI BUILD -- Screen Refresh Rate at 65Hz"
 time="Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 
-curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$(git log --pretty=format:'%h : %s' -5)" -d chat_id=$CHAT_ID
+
 curl -F chat_id="-1001406849717" -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="$message $time" https://api.telegram.org/bot$BOT_API_KEY/sendDocument
 
 curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
-♔♔♔♔♔♔♔BUILD-DETAILS♔♔♔♔♔♔♔
-🖋️ Author     : vvrRockStar
+	BUILD-DETAILS
 🛠️ Make-Type  : $MAKE_TYPE
 🗒️ Buld-Type  : MIUI-Staging
 ⌚ Build-Time : $time
-🗒️ Zip-Name   : $ZIPNAME
+🗒️ Zip-Link   : [${ZIPNAME}](${url})
 "  -d chat_id=$CHAT_ID
+curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="
+	Recent Commits:
+	$(git log --pretty=format:'%h : %s' -5)
+	" -d chat_id=$CHAT_ID
 # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADFQADIIRIEhVlVOIt6EkuAgc"  -d chat_id=$CHAT_ID
 # curl -F document=@$url caption="Latest Build." https://api.telegram.org/bot$BOT_API_KEY/sendDocument -d chat_id=$CHAT_ID
 
