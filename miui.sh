@@ -51,11 +51,6 @@ export TOOLCHAIN="${HOME}/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files/";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
-export CC=$HOME/clang/bin/clang
-export CLANG_VERSION=$($CC --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-export CLANG_TRIPLE=aarch64-linux-gnu-
-export CLANG_LD_PATH=$HOME/clang/lib
-export LLVM_DIS=$HOME/clang/bin/llvm-dis
 
 export MAKE_TYPE="MIUI"
 export MODULES_DIR="${KERNELDIR}/modules";
@@ -102,7 +97,7 @@ if [[ "$@" =~ "clean" ]]; then
 fi
 
 # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADFgADx8M3D8ZwwIWZRWcwAg"  -d chat_id=$CHAT_ID
-curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="Beta Build Scheduled for $KERNELNAME Kernel (MIUI) " -d chat_id=$CHAT_ID
+curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$KERNELNAME Kernel (MIUI) being Built with LOVE ❤️ " -d chat_id=$CHAT_ID
 ${MAKE} $DEFCONFIG;
 ${MAKE} ${MODULES};
 START=$(date +"%s");
@@ -163,14 +158,14 @@ if [[ ${success} == true ]]; then
     echo -e "Uploading ${ZIPNAME} to https://transfer.sh/";
     transfer "${FINAL_ZIP}";
 
-message="MIUI BUILD -- Screen Refresh Rate at 65Hz"
+message="MIUI BUILD -- tailored with LOVE ❤️  "
 time="Build took $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 
 
 curl -F chat_id=$CHAT_ID -F document=@"${ZIP_DIR}/$ZIPNAME" -F caption="
 	BUILD-DETAILS
 🛠️ Make-Type  : $MAKE_TYPE
-🗒️ Build-Type  : MIUI-Staging
+🗒️ Build-Type  : MIUI-Release
 ⌚ Build-Time : $time
 🗒️ Zip-Link   : [${ZIPNAME}](${url})
 "  https://api.telegram.org/bot$BOT_API_KEY/sendDocument
