@@ -360,7 +360,7 @@ static ssize_t daytime_r_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
@@ -398,7 +398,7 @@ static ssize_t daytime_g_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
@@ -436,7 +436,7 @@ static ssize_t daytime_b_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
@@ -474,7 +474,7 @@ static ssize_t target_r_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
@@ -512,7 +512,7 @@ static ssize_t target_g_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
@@ -550,7 +550,7 @@ static ssize_t target_b_dump(struct kobject *kobj,
     if (kstrtouint(buf, 0, &tmpval) != 0)
         return -EINVAL;
 
-    if ((tmpval > (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
+    if ((tmpval >= (SCALE_VAL_MIN)) && (tmpval <= MAX_SCALE))
     {
         if (enable_klapse == 2)
         {
