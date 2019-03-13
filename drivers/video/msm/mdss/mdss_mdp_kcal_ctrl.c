@@ -299,7 +299,6 @@ void kcal_ext_apply_values(int red, int green, int blue)
 	lut_data->blue = blue;
 
 	mdss_mdp_kcal_update_pcc(lut_data);
-	mdss_mdp_kcal_display_commit();
 }
 
 int kcal_ext_get_value(int color)
