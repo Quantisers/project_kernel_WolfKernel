@@ -47,10 +47,11 @@ export ARCH="arm64";
 export SUBARCH="arm64";
 export KBUILD_BUILD_USER="QuantumMech2000"
 export KBUILD_BUILD_HOST="TeamQuantum"
-export TOOLCHAIN="${HOME}/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-linux-gnu/";
+export TOOLCHAIN="${HOME}/gcc-linaro-4.9.4-2017.01-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files/";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
+
 
 export MAKE_TYPE="MIUI"
 export MODULES_DIR="${KERNELDIR}/modules";
@@ -99,7 +100,7 @@ fi
 # curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendSticker -d sticker="CAADBQADFgADx8M3D8ZwwIWZRWcwAg"  -d chat_id=$CHAT_ID
 curl -s -X POST https://api.telegram.org/bot$BOT_API_KEY/sendMessage -d text="$KERNELNAME Kernel (MIUI) being Built with LOVE ❤️ " -d chat_id=$CHAT_ID
 ${MAKE} $DEFCONFIG;
-${MAKE} ${MODULES};
+${MAKE} ${MODULES} CC=~/clang/bin/clang CLANG_TRIPLE="${CROSS_COMPILE}";
 START=$(date +"%s");
 echo -e "Using ${JOBS} threads to compile"
 ${MAKE} -j${JOBS};
