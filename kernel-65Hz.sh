@@ -72,7 +72,7 @@ export TCVERSION1="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F '(' '{print $2}' | awk '{print tolower($1)}')"
 export TCVERSION2="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F ')' '{print $2}' | awk '{print tolower($1)}')"
-export ZIPNAME="${KERNELNAME}-5.7-${DEVICE}-TREBLE-65Hz-$(date +%Y%m%d-%H%M).zip"
+export ZIPNAME="${KERNELNAME}-6.x+-${DEVICE}-TREBLE-65Hz-$(date +%Y%m%d-%H%M).zip"
 export FINAL_ZIP="${ZIP_DIR}/${ZIPNAME}"
 
 [ ! -d "${ZIP_DIR}" ] && mkdir -pv ${ZIP_DIR}
@@ -107,7 +107,11 @@ Build Scheduled for $KERNELNAME Kernel (Treble-65Hz)" -d chat_id=$CHAT_ID
 ${MAKE} $DEFCONFIG;
 START=$(date +"%s");
 echo -e "Using ${JOBS} threads to compile"
-${MAKE} -j${JOBS};
+${MAKE} -j${JOBS} \
+  	 	 	  ARCH=arm64 \
+                          CC=${HOME}/clang/bin/clang \
+                          CROSS_COMPILE="${CROSS_COMPILE}" \
+                          CLANG_TRIPLE="${CROSS_COMPILE}" ;
 exitCode="$?";
 END=$(date +"%s")
 DIFF=$(($END - $START))
