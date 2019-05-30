@@ -652,7 +652,9 @@ include arch/$(SRCARCH)/Makefile
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
 KBUILD_CFLAGS	+= $(call cc-disable-warning,frame-address,)
 KBUILD_CFLAGS   += $(call cc-disable-warning,maybe-uninitialized)
-
+KBUILD_CFLAGS   += $(call cc-disable-warning, bool-compare)
+KBUILD_CFLAGS   += $(call cc-disable-warning, parentheses)
+KBUILD_CFLAGS   += $(call cc-disable-warning, memset-elt-size)
 KBUILD_CFLAGS   += $(call cc-disable-warning,misleading-indentation)
 KBUILD_CFLAGS   += $(call cc-disable-warning,duplicate-decl-specifier)
 KBUILD_CFLAGS   += $(call cc-disable-warning,bool-operation)
