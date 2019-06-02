@@ -8,7 +8,7 @@ do.devicecheck=1
 do.modules=1
 do.cleanup=1
 do.cleanuponabort=1
-device.name1=onclite
+device.name1=onc
 device.name2=Xiaomi
 device.name3=Redmi 7
 '; } # end properties
