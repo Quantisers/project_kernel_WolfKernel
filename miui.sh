@@ -139,8 +139,7 @@ mkdir -p $KERNELDIR/AnyKernel2/modules
 rm -r $KERNELDIR/AnyKernel2/modules/*.ko
 rm -r $KERNELDIR/AnyKernel2/modules/pronto
 cp -f $MODULES_DIR/*.ko $KERNELDIR/AnyKernel2/modules/
-mkdir -p $KERNELDIR/AnyKernel2/modules/pronto
-cp -f $KERNELDIR/AnyKernel2/modules/wlan.ko $KERNELDIR/AnyKernel2/modules/pronto/pronto_wlan.ko
+mv  $KERNELDIR/AnyKernel2/modules/wlan.ko $KERNELDIR/AnyKernel2/modules/pronto_wlan.ko
 
 
 
