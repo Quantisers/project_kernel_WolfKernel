@@ -709,6 +709,12 @@ config QNS_SYSTEM
 	  kernel driver for a battery charging.
 	  This adds sysfs interface which enables QNS daemon to access it.
 
+config AUTOCUT_CHARGER
+	bool "AutoCut Charger"
+	default n
+	help
+	  Cut battery charging if battery is FULL.
+
 source "drivers/power/reset/Kconfig"
 
 endif # POWER_SUPPLY
