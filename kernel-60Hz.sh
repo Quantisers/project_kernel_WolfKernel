@@ -47,7 +47,7 @@ export ARCH="arm64";
 export SUBARCH="arm64";
 export KBUILD_BUILD_USER="QuantumMech2000"
 export KBUILD_BUILD_HOST="TeamQuantum"
-export TOOLCHAIN="${HOME}/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/";
+export TOOLCHAIN="${HOME}/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/";
 export DEFCONFIG="santoni_defconfig";
 export ZIP_DIR="${HOME}/${KERNELDIR}/files";
 export IMAGE="${OUTDIR}/arch/${ARCH}/boot/Image.gz-dtb";
@@ -72,7 +72,7 @@ export TCVERSION1="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F '(' '{print $2}' | awk '{print tolower($1)}')"
 export TCVERSION2="$(${CROSS_COMPILE}gcc --version | head -1 |\
 awk -F ')' '{print $2}' | awk '{print tolower($1)}')"
-export ZIPNAME="${KERNELNAME}-5.7-${DEVICE}-TREBLE-60Hz-$(date +%Y%m%d-%H%M).zip"
+export ZIPNAME="${KERNELNAME}-8.x-TREBLE-$(date +%Y%m%d-%H%M).zip"
 export FINAL_ZIP="${ZIP_DIR}/${ZIPNAME}"
 
 [ ! -d "${ZIP_DIR}" ] && mkdir -pv ${ZIP_DIR}
