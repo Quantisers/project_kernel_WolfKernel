@@ -34,15 +34,8 @@
 #include <linux/fs.h>
 #include <asm/uaccess.h>
 
-#include <linux/hardware_info.h>
-
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 #include <linux/input/doubletap2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-#include <linux/input/sweep2wake.h>
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-#include <linux/input/doubletap2wake.h>
-#include <linux/input/sweep2wake.h>
 #endif
 
 #if CTP_CHARGER_DETECT
@@ -177,6 +170,18 @@ static u8 pre_charger_status = 0;
 
 #if CTP_PROC_INTERFACE
 static struct i2c_client *g_focalclient = NULL;
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+static bool lcd_on = true;
+static void set_lcd_status(bool scr_on)
+{
+	lcd_on = scr_on;
+}
+bool dt2w_scr_on(void)
+{
+	return lcd_on;
+}
 #endif
 
 #if CTP_PROC_INTERFACE
@@ -357,7 +362,7 @@ static irqreturn_t ft5x06_ts_interrupt(int irq, void *dev_id)
 	struct ft5x06_ts_data *data = dev_id;
 	struct input_dev *ip_dev;
 	int rc, i;
-	u32 id, x, y, status, num_touches;
+	u32 id, x, y, status, num_touches = 0;
 	u8 reg = 0x00, *buf;
 	bool update_input = false;
 
@@ -596,7 +601,7 @@ static int ft5x06_ts_pinctrl_select(struct ft5x06_ts_data *ft5x06_data,
 	return 0;
 }
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 static bool ev_btn_status = false;
 static bool ft5x06_irq_active = false;
 static void ft5x06_irq_handler(int irq, bool active)
@@ -622,15 +627,8 @@ static int ft5x06_ts_suspend(struct device *dev)
 	char txbuf[2], i;
 	int err;
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 && !gesture_incall) {
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1 && !gesture_incall) {
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if ((dt2w_switch > 0 || s2w_switch == 1) &&
-		!gesture_incall) {
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	if (dt2w_switch > 0 && !dt2w_incall_on()) {
 		if (!ev_btn_status) {
 			/* release all touches */
 			for (i = 0; i < data->pdata->num_max_touches; i++) {
@@ -711,19 +709,13 @@ static int ft5x06_ts_resume(struct device *dev)
 	struct ft5x06_ts_data *data = dev_get_drvdata(dev);
 	int err;
 
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && !defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 	if (dt2w_switch > 0) {
-#elif (defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE) && !defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE))
-	if (s2w_switch == 1) {
-#elif (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) && defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
-	if (dt2w_switch > 0 || s2w_switch == 1) {
-#endif
-#if (defined(CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE) || defined(CONFIG_TOUCHSCREEN_SWEEP2WAKE))
 		if (ev_btn_status) {
 			__set_bit(BTN_TOUCH, data->input_dev->keybit);
 			input_sync(data->input_dev);
 			ev_btn_status = false;
-		}		
+		}
 		ft5x06_irq_handler(data->client->irq, false);
 	}
 #endif
@@ -822,8 +814,14 @@ static int fb_notifier_callback(struct notifier_block *self,
 			ft5x06_data && ft5x06_data->client) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_UNBLANK) {
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+			set_lcd_status(true);
+#endif
 			schedule_work(&ft5x06_data->fb_notify_work);
 		} else if (*blank == FB_BLANK_POWERDOWN) {
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+			set_lcd_status(false);
+#endif
 			flush_work(&ft5x06_data->fb_notify_work);
 			ft5x06_ts_suspend(&ft5x06_data->client->dev);
 		}
@@ -1795,7 +1793,11 @@ static DEVICE_ATTR(ftsfwupgradeapp, S_IRUGO|S_IWUSR, ft5x0x_fwupgradeapp_show, f
 
 #if CTP_PROC_INTERFACE
 
+#ifdef CONFIG_MACH_XIAOMI_SANTONI_TREBLE
 #define FT5X0X_INI_FILEPATH "/vendor/etc/"
+#else
+#define FT5X0X_INI_FILEPATH "/system/vendor/etc/"
+#endif
 
 static int ft5x0x_GetInISize(char *config_name)
 {
@@ -2243,89 +2245,6 @@ static void create_ctp_proc(void)
 }
 #endif
 
-#if  WT_ADD_CTP_INFO
-static int hardwareinfo_set(struct ft5x06_ts_data *data, u8 value_name, u8 color)
-{
-	char firmware_ver[HARDWARE_MAX_ITEM_LONGTH];
-	char vendor_for_id[HARDWARE_MAX_ITEM_LONGTH];
-	char ic_name[HARDWARE_MAX_ITEM_LONGTH];
-	char ic_color[HARDWARE_MAX_ITEM_LONGTH];
-	int err;
-
-		u8 uc_tp_fm_ver, reg_addr;
-	if (lockdown_info[0] == TP_Biel)
-		snprintf(vendor_for_id, HARDWARE_MAX_ITEM_LONGTH, "BIEL_HD");
-	else if (lockdown_info[0] == TP_OUFEI)
-		snprintf(vendor_for_id, HARDWARE_MAX_ITEM_LONGTH, "OUFEI_HD");
-	else if (lockdown_info[0] == TP_LENS)
-		snprintf(vendor_for_id, HARDWARE_MAX_ITEM_LONGTH, "LENS_HD");
-	else
-		snprintf(vendor_for_id, HARDWARE_MAX_ITEM_LONGTH, "Other vendor");
-
-	switch (value_name) {
-	case IC_FT5X06:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5X06");
-		break;
-	case IC_FT5606:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5606");
-		break;
-	case IC_FT5X16:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5X16");
-		break;
-	case IC_FT6208:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT6208");
-		break;
-	case IC_FT6X06:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT6X06");
-		break;
-	case IC_FT6X36:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT6X36");
-			break;
-	case IC_FT5336:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5336");
-		break;
-	case IC_FT3316:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT3316");
-		break;
-	case IC_FT5436i:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5436i");
-		break;
-	case IC_FT5336i:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "FT5336i");
-		break;
-	default:
-		snprintf(ic_name, HARDWARE_MAX_ITEM_LONGTH, "Other IC");
-	}
-
-	switch (color) {
-	case TP_White:
-		snprintf(ic_color, HARDWARE_MAX_ITEM_LONGTH, "White");
-		break;
-	case TP_Black:
-		snprintf(ic_color, HARDWARE_MAX_ITEM_LONGTH, "Black");
-		break;
-	case TP_Golden:
-		snprintf(ic_color, HARDWARE_MAX_ITEM_LONGTH, "Golden");
-		break;
-	default:
-		snprintf(ic_color, HARDWARE_MAX_ITEM_LONGTH, "other Color");
-	}
-
-
-	if (nomal_boot) {
-		reg_addr = 0xA6;
-		ft5x06_i2c_read(data->client, &reg_addr, 1, &uc_tp_fm_ver, 1);
-		snprintf(firmware_ver, HARDWARE_MAX_ITEM_LONGTH, "%s, %s, FW:0x%x, %s", vendor_for_id, ic_name, uc_tp_fm_ver, ic_color);
-	} else
-	snprintf(firmware_ver, HARDWARE_MAX_ITEM_LONGTH, "%s, %s, FW:0x%x, %s", vendor_for_id, ic_name, data->fw_ver[0], ic_color);
-
-	err = hardwareinfo_set_prop(HARDWARE_TP, firmware_ver);
-	if (err < 0)
-		return -EPERM;
-
-	return 0;
-}
-#endif
 #if FTS_PROC_APK_DEBUG
 static int ft5x0x_i2c_Read(struct i2c_client *client, char *writebuf,
 		int writelen, char *readbuf, int readlen)
@@ -2892,12 +2811,6 @@ static int ft5x06_ts_probe(struct i2c_client *client,
 	} else {
 		dev_err(&client->dev, "no upgrade\n");
 	}
-#endif
-
-#if  WT_ADD_CTP_INFO
-	err = hardwareinfo_set(data, ic_name, lockdown_info[2]);
-	if (err < 0)
-		dev_err(&client->dev, "hardwareinfo set failed");
 #endif
 
 #if CTP_CHARGER_DETECT
